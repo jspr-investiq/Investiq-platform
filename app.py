@@ -69,10 +69,10 @@ if submitted:
                     messages=[{"role": "user", "content": prompt}]
                 )
                 
-                # Display results
+                # Display results - using st.text() to avoid markdown parsing issues
                 st.success("Analysis Complete!")
-                st.write("### Investment Analysis Results")
-                st.write(response.content[0].text)
+                st.subheader("Investment Analysis Results")
+                st.text(response.content[0].text)
                 
             except Exception as e:
                 st.error(f"Error: {str(e)}")
