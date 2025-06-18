@@ -1,9 +1,10 @@
 import streamlit as st
 import anthropic
+import re
 
 st.set_page_config(page_title="InvestIQ", page_icon="💼")
 
-st.title("InvestIQ - VC Analysis")
+st.title("InvestIQ")
 
 # Get API key
 try:
@@ -13,74 +14,61 @@ except:
     st.error("Please add your ANTHROPIC_API_KEY to Streamlit secrets")
     st.stop()
 
-# Simple form
-with st.form("analysis_form"):
-    st.text("Company Information")
-    
-    company_name = st.text_input("Company Name")
-    
-    sector = st.selectbox("Sector", [
-        "SaaS/Software",
-        "FinTech",
-        "HealthTech", 
-        "EdTech",
-        "E-commerce",
-        "AI/ML",
-        "Other"
-    ])
-    
-    description = st.text_area("Company Description", height=100)
-    
-    submitted = st.form_submit_button("Analyze Investment")
+def sanitize_text(text):
+    """Remove characters that break Streamlit's regex parser"""
+    # Remove or replace problematic characters
+    text = re.sub(r'[<>{}[\]()\\]', '', text)  # Remove regex metacharacters
+    text = re.sub(r'[^\w\s\-.,!?:;/]', '', text)  # Keep only safe characters
+    text = re.sub(r'\s+', ' ', text)  # Normalize whitespace
+    return text.strip()
 
-# Process form submission
-if submitted:
+# Simple form
+company_name = st.text_input("Company Name")
+sector = st.selectbox("Sector", ["SaaS", "FinTech", "HealthTech", "EdTech", "AI", "Other"])
+description = st.text_area("Company Description", height=100)
+
+if st.button("Analyze Investment"):
     if not company_name or not description:
         st.error("Please fill in company name and description")
     else:
-        st.text("Analyzing...")
-        
-        # Create prompt
-        prompt = f"""Analyze this investment opportunity as a venture capital partner:
+        with st.spinner("Analyzing..."):
+            # Create prompt
+            prompt = f"""Analyze this investment opportunity:
 
 Company: {company_name}
 Sector: {sector}
 Description: {description}
 
-Please provide:
-1. Investment recommendation (INVEST, PASS, or INVESTIGATE)
+Provide:
+1. Recommendation: INVEST, PASS, or INVESTIGATE
 2. Key strengths
 3. Main concerns
 4. Next steps
 
-Keep your response clear and actionable."""
-        
-        # Call Claude API
-        try:
-            response = client.messages.create(
-                model="claude-sonnet-4-20250514",
-                max_tokens=1000,
-                messages=[{"role": "user", "content": prompt}]
-            )
+Keep response simple and clear."""
             
-            # Display results - ONLY using st.text() to avoid any markdown processing
-            st.success("Analysis Complete!")
-            st.text("Investment Analysis Results:")
-            st.text("")
-            st.text(response.content[0].text)
-            
-        except Exception as e:
-            st.error(f"Error: {str(e)}")
+            try:
+                response = client.messages.create(
+                    model="claude-sonnet-4-20250514",
+                    max_tokens=800,
+                    messages=[{"role": "user", "content": prompt}]
+                )
+                
+                # Sanitize the response to prevent regex errors
+                clean_text = sanitize_text(response.content[0].text)
+                
+                # Display using code block to avoid markdown processing
+                st.success("Analysis Complete")
+                st.code(clean_text, language=None)
+                
+            except Exception as e:
+                st.error(f"Error: {str(e)}")
 
-# Simple sidebar - using only st.text() and st.metric()
-with st.sidebar:
-    st.text("About InvestIQ")
-    st.text("VC analysis powered by Claude AI")
-    
-    if 'analysis_count' not in st.session_state:
-        st.session_state.analysis_count = 0
-    
-    if submitted and company_name and description:
-        st.session_state.analysis_count += 1
-    
-    st.metric("Analyses", st.session_state.analysis_count)
+# Simple counter
+if 'count' not in st.session_state:
+    st.session_state.count = 0
+
+if company_name and description and st.button:
+    st.session_state.count += 1
+
+st.sidebar.metric("Analyses", st.session_state.count)
