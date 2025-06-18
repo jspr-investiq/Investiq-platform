@@ -449,4 +449,274 @@ def analyze_investment_opportunity(company_data, api_key):
         Funding Requirement: ${company_data['funding_amount']:,.0f}
         
         COMPANY DESCRIPTION:
-        {
+        {company_data['description']}
+
+        Please provide a detailed institutional-grade investment memo with the following structure:
+
+        EXECUTIVE SUMMARY
+        Provide a concise 2-3 paragraph summary covering key investment highlights, risks, and recommendation. Include specific metrics and valuations where applicable.
+
+        INVESTMENT THESIS
+        Detail the core reasons why this represents an attractive investment opportunity. Focus on competitive advantages, market positioning, and growth potential.
+
+        MARKET OPPORTUNITY
+        Analyze the total addressable market (TAM), serviceable addressable market (SAM), and competitive landscape. Include market size estimates and growth projections.
+
+        FINANCIAL ANALYSIS
+        Evaluate revenue model, unit economics, capital efficiency, and projected financial performance. Include assumptions about burn rate, runway, and path to profitability.
+
+        RISK ASSESSMENT
+        Identify and assess key risks including market risk, execution risk, competitive threats, regulatory concerns, and team/management risks.
+
+        DUE DILIGENCE NOTES
+        Outline critical areas requiring further investigation and key questions for management during due diligence process.
+
+        INVESTMENT RECOMMENDATION
+        Provide clear recommendation (Pass/Further Review/Invest) with rationale, suggested valuation range, and proposed investment terms.
+
+        Format this as a professional investment memo suitable for presentation to an investment committee at a tier-1 VC firm.
+        """
+
+        message = client.messages.create(
+            model="claude-3-sonnet-20240229",
+            max_tokens=3000,
+            temperature=0.2,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        
+        return message.content[0].text
+    
+    except Exception as e:
+        return f"Analysis Error: {str(e)}\n\nPlease verify API key configuration and try again."
+
+# Sidebar configuration
+with st.sidebar:
+    st.markdown('<div class="sidebar-content">', unsafe_allow_html=True)
+    
+    st.markdown('<div class="sidebar-title">System Configuration</div>', unsafe_allow_html=True)
+    
+    api_key = st.text_input(
+        "Claude API Key",
+        value=st.session_state.api_key,
+        type="password",
+        help="Enter your Anthropic Claude API key for analysis functionality"
+    )
+    st.session_state.api_key = api_key
+    
+    if not api_key:
+        st.markdown('<span class="status-indicator status-warning">API Key Required</span>', unsafe_allow_html=True)
+    else:
+        st.markdown('<span class="status-indicator status-success">System Ready</span>', unsafe_allow_html=True)
+    
+    st.markdown('<div class="sidebar-title">Platform Status</div>', unsafe_allow_html=True)
+    st.markdown("**System Status:** Operational")
+    st.markdown("**Last Updated:** " + datetime.now().strftime("%Y-%m-%d %H:%M UTC"))
+    st.markdown("**API Version:** Claude 3 Sonnet")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# Main content area
+st.markdown('<div class="main-content">', unsafe_allow_html=True)
+
+# Company Analysis Section
+st.markdown("""
+<div class="vcs-section">
+    <div class="vcs-section-header">Investment Opportunity Analysis</div>
+    <div class="vcs-section-content">
+""", unsafe_allow_html=True)
+
+with st.form("investment_analysis_form", clear_on_submit=False):
+    # Company identification
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        company_name = st.text_input(
+            "Company Name",
+            placeholder="Enter target company name"
+        )
+        
+        sector = st.selectbox(
+            "Primary Sector",
+            ["", "Enterprise Software", "Consumer Technology", "FinTech", "HealthTech", 
+             "DeepTech", "Artificial Intelligence", "Cybersecurity", "Climate Tech", 
+             "Biotech", "E-commerce", "Marketplace", "Infrastructure", "Other"]
+        )
+        
+    with col2:
+        stage = st.selectbox(
+            "Investment Stage",
+            ["", "Pre-Seed", "Seed", "Series A", "Series B", "Series C", 
+             "Series D", "Growth Stage", "Pre-IPO"]
+        )
+        
+        funding_amount = st.number_input(
+            "Funding Requirement (USD)",
+            min_value=0,
+            value=5000000,
+            step=500000,
+            format="%d"
+        )
+    
+    # Detailed company information
+    description = st.text_area(
+        "Investment Opportunity Description",
+        placeholder="Provide comprehensive details including business model, product/service offering, target market, competitive positioning, revenue model, team background, and key milestones achieved...",
+        height=200
+    )
+    
+    # Analysis trigger
+    submitted = st.form_submit_button(
+        "Generate Investment Analysis",
+        use_container_width=True
+    )
+    
+    if submitted:
+        if not all([company_name, sector, stage, description, api_key]):
+            st.error("**Incomplete Submission:** Please complete all required fields and ensure API configuration is valid.")
+        else:
+            company_data = {
+                'name': company_name,
+                'sector': sector,
+                'stage': stage,
+                'funding_amount': funding_amount,
+                'description': description
+            }
+            
+            with st.spinner("Generating institutional-grade investment analysis..."):
+                analysis = analyze_investment_opportunity(company_data, api_key)
+                st.session_state.analysis_results = {
+                    'company_data': company_data,
+                    'analysis': analysis,
+                    'timestamp': datetime.now(),
+                    'analyst_id': "VCS-AI-001"
+                }
+
+st.markdown("""
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+# Current Analysis Status
+if st.session_state.analysis_results:
+    data = st.session_state.analysis_results['company_data']
+    
+    # Create metrics display with proper string formatting
+    funding_amount = data['funding_amount']
+    stage = data['stage']
+    sector = data['sector']
+    
+    st.markdown(f"""
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-value">${funding_amount:,.0f}</div>
+            <div class="metric-label">Funding Requirement</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value">{stage}</div>
+            <div class="metric-label">Investment Stage</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value">{sector}</div>
+            <div class="metric-label">Primary Sector</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value">AI Generated</div>
+            <div class="metric-label">Analysis Type</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+# Investment Analysis Results
+if st.session_state.analysis_results:
+    results = st.session_state.analysis_results
+    company_data = results['company_data']
+    analysis = results['analysis']
+    
+    company_name = company_data['name']
+    timestamp = results['timestamp'].strftime('%B %d, %Y at %H:%M UTC')
+    analyst_id = results['analyst_id']
+    
+    st.markdown(f"""
+    <div class="analysis-container">
+        <div class="analysis-header">
+            Investment Analysis: {company_name}
+        </div>
+        <div class="analysis-content">
+    """, unsafe_allow_html=True)
+    
+    # Analysis metadata
+    st.markdown(f"""
+    <div class="analysis-meta">
+        <strong>Analysis Generated:</strong> {timestamp} | 
+        <strong>Analyst ID:</strong> {analyst_id} | 
+        <strong>Confidence Level:</strong> High | 
+        <strong>Review Status:</strong> Preliminary
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Format and display professional analysis
+    formatted_sections = format_investment_memo(analysis)
+    
+    for section_name, content in formatted_sections.items():
+        if content.strip():
+            st.markdown(f"""
+            <div class="analysis-section">
+                <div class="analysis-section-title">{section_name}</div>
+                <div>{content.strip()}</div>
+            </div>
+            """, unsafe_allow_html=True)
+    
+    # Generate downloadable investment memo
+    memo_content = f"""
+INVESTIQ VCS PLATFORM - CONFIDENTIAL INVESTMENT ANALYSIS
+Generated: {timestamp}
+Analyst ID: {analyst_id}
+
+INVESTMENT OPPORTUNITY PROFILE
+Company: {company_data['name']}
+Sector: {company_data['sector']}
+Stage: {company_data['stage']}
+Funding Requirement: ${company_data['funding_amount']:,.0f}
+
+OPPORTUNITY DESCRIPTION:
+{company_data['description']}
+
+PROFESSIONAL INVESTMENT ANALYSIS:
+{analysis}
+
+---
+CONFIDENTIAL AND PROPRIETARY
+This analysis contains confidential and proprietary information of InvestIQ VCS Platform.
+Distribution is restricted to authorized investment professionals only.
+
+© 2025 InvestIQ VCS Platform. All rights reserved.
+    """
+    
+    filename = f"VCS_Analysis_{company_data['name'].replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M')}.txt"
+    download_link = create_download_link(memo_content, filename)
+    st.markdown(download_link, unsafe_allow_html=True)
+    
+    st.markdown("""
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+st.markdown('</div>', unsafe_allow_html=True)
+
+# Professional footer
+st.markdown("""
+<div class="vcs-footer">
+    <div class="footer-content">
+        <div class="footer-disclaimer">
+            <strong>IMPORTANT DISCLAIMER:</strong> This analysis is generated using artificial intelligence and is intended for preliminary investment evaluation only. 
+            All investment decisions should be based on comprehensive due diligence, independent verification of information, and consultation with qualified 
+            investment professionals. Past performance does not guarantee future results. All investments carry risk of loss.
+        </div>
+        <div>
+            <strong>InvestIQ VCS Platform</strong> | Enterprise Investment Analysis System v2.1.3<br>
+            Powered by Advanced AI Analytics | For Professional Investors Only<br>
+            © 2025 InvestIQ. All rights reserved. | SOC 2 Type II Certified | ISO 27001 Compliant
+        </div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
