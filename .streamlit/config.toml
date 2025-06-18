@@ -1,0 +1,24 @@
+[global]
+developmentMode = false
+
+[server]
+runOnSave = true
+port = 8501
+enableCORS = false
+enableXsrfProtection = true
+maxUploadSize = 200
+
+[browser]
+gatherUsageStats = false
+
+[theme]
+primaryColor = "#1E40AF"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F9FAFB"
+textColor = "#111827"
+font = "sans serif"
+
+[client]
+caching = true
+displayEnabled = true
+"add config"
