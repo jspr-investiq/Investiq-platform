@@ -147,6 +147,7 @@ st.markdown("""
         padding: 0.75rem;
         font-size: 0.875rem;
         background-color: #ffffff;
+        color: #374151;
         transition: border-color 0.15s ease-in-out;
         font-family: 'Inter', sans-serif;
     }
@@ -162,7 +163,7 @@ st.markdown("""
     
     /* Professional button styling */
     .stButton > button {
-        background-color: #1e3a8a;
+        background-color: #3b82f6;
         color: white;
         border: none;
         border-radius: 4px;
@@ -175,7 +176,7 @@ st.markdown("""
     }
     
     .stButton > button:hover {
-        background-color: #1e40af;
+        background-color: #2563eb;
     }
     
     .stButton > button:active {
